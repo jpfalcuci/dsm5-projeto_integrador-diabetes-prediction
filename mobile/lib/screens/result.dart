@@ -41,8 +41,8 @@ class _ResultState extends State<Result> {
         final int diabetesResult = jsonDecode(response.body)['diabetes'];
         setState(() {
           resultMessage = diabetesResult == 1
-              ? "Você tem alto risco de diabetes!\nConsulte um médico."
-              : "Você tem baixo risco de diabetes!\nContinue cuidando da sua saúde!";
+              ? "Baseado em seus dados, você apresenta ALTO RISCO para diabetes!\nConsidere consultar um médico."
+              : "Baseado em seus dados, você apresenta BAIXO RISCO para diabetes!\nContinue cuidando da sua saúde!";
           isLoading = false;
         });
       } else {
