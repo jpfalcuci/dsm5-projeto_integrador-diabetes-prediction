@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../components/numeric_field.dart';
+import '../components/radio_group.dart';
+import '../components/field_group.dart';
 import 'result.dart';
 
 // Enums para valores fixos
@@ -18,7 +21,8 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
 
   // Controllers para campos de texto
   final _ageController = TextEditingController();
-  final _bmiController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
   final _hba1cController = TextEditingController();
   final _glucoseController = TextEditingController();
 
@@ -32,7 +36,8 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
   @override
   void dispose() {
     _ageController.dispose();
-    _bmiController.dispose();
+    _weightController.dispose();
+    _heightController.dispose();
     _hba1cController.dispose();
     _glucoseController.dispose();
     super.dispose();
@@ -40,7 +45,12 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
 
   void _onSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
+      final weight = double.parse(_weightController.text);
+      final height = double.parse(_heightController.text);
+      final bmi = weight / (height * height);
+
       final genderValue = _selectedGender == Gender.male ? 1 : 0;
+
       final raceValues = {
         'race:AfricanAmerican': _selectedRace == Race.africanAmerican ? 1 : 0,
         'race:Asian': _selectedRace == Race.asian ? 1 : 0,
@@ -63,7 +73,7 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
         ...raceValues,
         'hypertension': _hasHypertension == true ? 1 : 0,
         'heart_disease': _hasHeartDisease == true ? 1 : 0,
-        'bmi': double.parse(_bmiController.text),
+        'bmi': bmi,
         'hbA1c_level': double.parse(_hba1cController.text),
         'blood_glucose_level': double.parse(_glucoseController.text),
         ...smokingValues,
@@ -78,23 +88,12 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
     }
   }
 
-  String? _validateNumericField(String? value, String fieldName) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, digite o $fieldName';
-    }
-    if (double.tryParse(value) == null) {
-      return 'Digite um valor numérico válido';
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Verificar Diabetes', 
-          style: TextStyle(color: Colors.black)),
+        title: const Text('Verificar Diabetes', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.black),
         elevation: 0,
@@ -104,203 +103,126 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            children: [              
-              _buildFieldGroup(
-                title: 'Gênero',
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<Gender>(
-                        title: const Text('Masculino'),
-                        value: Gender.male,
-                        groupValue: _selectedGender,
-                        onChanged: (value) => setState(() => _selectedGender = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<Gender>(
-                        title: const Text('Feminino'),
-                        value: Gender.female,
-                        groupValue: _selectedGender,
-                        onChanged: (value) => setState(() => _selectedGender = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              _buildNumericField(
+            children: [
+              // Idade
+              NumericField(
                 controller: _ageController,
                 label: 'Idade',
                 hint: 'Digite a idade',
               ),
               const SizedBox(height: 16),
-              
-              _buildFieldGroup(
+
+              // Gênero
+              RadioGroup<Gender>(
+                title: 'Gênero',
+                values: Gender.values,
+                selectedValue: _selectedGender,
+                onChanged: (value) => setState(() => _selectedGender = value),
+                labels: {
+                  Gender.male: 'Masculino',
+                  Gender.female: 'Feminino',
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Raça
+              RadioGroup<Race>(
                 title: 'Raça',
-                child: Wrap(
-                  children: Race.values.map((race) {
-                    String label = switch (race) {
-                      Race.africanAmerican => 'Afro-Americano',
-                      Race.asian => 'Asiático',
-                      Race.caucasian => 'Caucasiano',
-                      Race.hispanic => 'Hispânico',
-                      Race.other => 'Outro',
-                    };
-                    return SizedBox(
-                      width: MediaQuery.of(context).size.width / 2 - 24,
-                      child: RadioListTile<Race>(
-                        title: Text(label),
-                        value: race,
-                        groupValue: _selectedRace,
-                        onChanged: (value) => setState(() => _selectedRace = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                values: Race.values,
+                selectedValue: _selectedRace,
+                onChanged: (value) => setState(() => _selectedRace = value),
+                labels: {
+                  Race.africanAmerican: 'Afro-Americano',
+                  Race.asian: 'Asiático',
+                  Race.caucasian: 'Caucasiano',
+                  Race.hispanic: 'Hispânico',
+                  Race.other: 'Outro',
+                },
               ),
               const SizedBox(height: 16),
-              
-              _buildFieldGroup(
+
+              // Hipertensão
+              RadioGroup<bool>(
                 title: 'Hipertensão',
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<bool>(
-                        title: const Text('Sim'),
-                        value: true,
-                        groupValue: _hasHypertension,
-                        onChanged: (value) => setState(() => _hasHypertension = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<bool>(
-                        title: const Text('Não'),
-                        value: false,
-                        groupValue: _hasHypertension,
-                        onChanged: (value) => setState(() => _hasHypertension = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                values: [true, false],
+                selectedValue: _hasHypertension,
+                onChanged: (value) => setState(() => _hasHypertension = value),
+                labels: {true: 'Sim', false: 'Não'},
               ),
               const SizedBox(height: 16),
-              
-              _buildFieldGroup(
+
+              // Doença Cardíaca
+              RadioGroup<bool>(
                 title: 'Doença Cardíaca',
+                values: [true, false],
+                selectedValue: _hasHeartDisease,
+                onChanged: (value) => setState(() => _hasHeartDisease = value),
+                labels: {true: 'Sim', false: 'Não'},
+              ),
+              const SizedBox(height: 16),
+
+              // Tabagismo
+              RadioGroup<SmokingStatus>(
+                title: 'Tabagismo',
+                values: SmokingStatus.values,
+                selectedValue: _selectedSmokingStatus,
+                onChanged: (value) => setState(() => _selectedSmokingStatus = value),
+                labels: {
+                  SmokingStatus.current: 'Fuma atualmente',
+                  SmokingStatus.ever: 'Já Fumou',
+                  SmokingStatus.former: 'Ex-fumante',
+                  SmokingStatus.never: 'Nunca Fumou',
+                  SmokingStatus.notCurrent: 'Não fuma atualmente',
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Peso e Altura
+              FieldGroup(
+                title: 'IMC (Peso e Altura)',
                 child: Row(
                   children: [
                     Expanded(
-                      child: RadioListTile<bool>(
-                        title: const Text('Sim'),
-                        value: true,
-                        groupValue: _hasHeartDisease,
-                        onChanged: (value) => setState(() => _hasHeartDisease = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
+                      child: NumericField(
+                        controller: _weightController,
+                        label: 'Peso (kg)',
+                        hint: 'Digite o peso',
+                        decimal: true,
                       ),
                     ),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: RadioListTile<bool>(
-                        title: const Text('Não'),
-                        value: false,
-                        groupValue: _hasHeartDisease,
-                        onChanged: (value) => setState(() => _hasHeartDisease = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
+                      child: NumericField(
+                        controller: _heightController,
+                        label: 'Altura (m)',
+                        hint: 'Digite a altura',
+                        decimal: true,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              
-              _buildFieldGroup(
-                title: 'Tabagismo',
-                child: Wrap(
-                  children: SmokingStatus.values.map((status) {
-                    String label = switch (status) {
-                      SmokingStatus.current => 'Fuma atualmente',
-                      SmokingStatus.ever => 'Já Fumou',
-                      SmokingStatus.former => 'Ex-fumante',
-                      SmokingStatus.never => 'Nunca Fumou',
-                      SmokingStatus.notCurrent => 'Não fuma atualmente',
-                    };
-                    return SizedBox(
-                      width: MediaQuery.of(context).size.width / 2 - 24,
-                      child: RadioListTile<SmokingStatus>(
-                        title: Text(label),
-                        value: status,
-                        groupValue: _selectedSmokingStatus,
-                        onChanged: (value) => setState(() => _selectedSmokingStatus = value),
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: const VisualDensity(
-                          horizontal: VisualDensity.minimumDensity,
-                          vertical: VisualDensity.minimumDensity,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              _buildNumericField(
-                controller: _bmiController,
-                label: 'Índice de Massa Corporal (BMI)',
-                hint: 'Digite o BMI',
-                decimal: true,
-              ),
-              const SizedBox(height: 16),
-              
-              _buildNumericField(
+
+              // HbA1c
+              NumericField(
                 controller: _hba1cController,
                 label: 'Nível de HbA1c',
                 hint: 'Digite o nível de HbA1c',
                 decimal: true,
               ),
               const SizedBox(height: 16),
-              
-              _buildNumericField(
+
+              // Glicose
+              NumericField(
                 controller: _glucoseController,
                 label: 'Nível de Glicose no Sangue',
                 hint: 'Digite o nível de glicose',
                 decimal: true,
               ),
               const SizedBox(height: 24),
-              
+
+              // Botão Enviar
               ElevatedButton(
                 onPressed: _onSubmit,
                 style: ElevatedButton.styleFrom(
@@ -321,40 +243,6 @@ class _DiabetesFormScreenState extends State<DiabetesFormScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFieldGroup({required String title, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 16)),
-        const SizedBox(height: 4),
-        child,
-      ],
-    );
-  }
-
-  Widget _buildNumericField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    bool decimal = false,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: _inputDecoration(label).copyWith(hintText: hint),
-      keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-      validator: (value) => _validateNumericField(value, label),
-    );
-  }
-
-  InputDecoration _inputDecoration(String labelText) {
-    return InputDecoration(
-      labelText: labelText,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
       ),
     );
   }
