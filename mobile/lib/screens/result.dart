@@ -13,7 +13,7 @@ class Result extends StatefulWidget {
 }
 
 class _ResultState extends State<Result> {
-  String result = "Aguardando resultado...";
+  String resultMessage = "Aguardando resultado...";
   bool isLoading = true;
 
   @override
@@ -30,20 +30,30 @@ class _ResultState extends State<Result> {
     await dotenv.load(fileName: '.env');
 
     final String apiUrl = dotenv.env['API_URL'] ?? '';
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(widget.formData),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(widget.formData),
+      );
 
-    if (response.statusCode == 200) {
+      if (response.statusCode == 200) {
+        final int diabetesResult = jsonDecode(response.body)['diabetes'];
+        setState(() {
+          resultMessage = diabetesResult == 1
+              ? "Você tem alto risco de diabetes!\nConsulte um médico."
+              : "Você tem baixo risco de diabetes!\nContinue cuidando da sua saúde!";
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          resultMessage = 'Erro ao obter o resultado.\nTente novamente mais tarde.';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        result = jsonDecode(response.body)['diabetes'].toString();
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        result = 'Erro ao obter o resultado.';
+        resultMessage = 'Erro ao conectar com o servidor.\nVerifique sua conexão.';
         isLoading = false;
       });
     }
@@ -52,23 +62,49 @@ class _ResultState extends State<Result> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Resultado')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Resultado',
+          style: TextStyle(color: Colors.black),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
+        elevation: 0,
+      ),
       body: Center(
-        child: isLoading
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(result, style: const TextStyle(fontSize: 20)),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Novo Teste'),
-                  ),
-                ],
-              ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: isLoading
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      resultMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Novo Teste',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
