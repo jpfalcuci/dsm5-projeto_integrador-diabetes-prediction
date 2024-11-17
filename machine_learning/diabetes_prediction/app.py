@@ -51,7 +51,7 @@ def predict():
             data['smoking_history_ever'],
             data['smoking_history_former'],
             data['smoking_history_never'],
-            data['smoking_history_not_current']
+            data['smoking_history_not current']
         ]).reshape(1, -1)  # Transformar em 2D para o modelo
 
         # Carrega o dataset sem normalização (apenas para pegar as colunas)
